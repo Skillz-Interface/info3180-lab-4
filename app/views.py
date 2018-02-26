@@ -11,6 +11,7 @@ from flask import render_template, request, redirect, url_for, flash, session, a
 from werkzeug.utils import secure_filename
 from flask_wtf.file import FileField, FileAllowed, FileRequired
 from app import forms
+from app import getImages
 
 
 ###
@@ -34,25 +35,26 @@ def upload():
         abort(401)
 
     # Instantiate your form class
-    
     class UploadForm(FlaskForm):
         photo = FileField(validators=[FileRequired()])
     # Validate file upload on submit
-    if form.validate_on_submit():
-        f=form.photo.data
+    if FlaskForm.validate_on_submit():
+        f=FlaskForm.photo.data
         filename = secure_filename(f.filename)
     if request.method == 'POST':
         # Get file data and save to your uploads folder
-        f.save(os.path.join(
-            app.instance_path, 'photos', uploads
-        ))
-
+        f.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        
+       
         flash('File Saved', 'success')
         return redirect(url_for('home'))
 
     return render_template('upload.html')
 
-
+@app.route('/files', methods=['POST','GET'])
+def files():
+    getImg = get_uploaded_images()
+    return render_template('files.html',images = getImg )
 @app.route('/login', methods=['POST', 'GET'])
 def login():
     error = None
