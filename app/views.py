@@ -10,7 +10,6 @@ from forms import UploadForm
 from app import app
 from flask import render_template, request, redirect, url_for, flash, session, abort
 from werkzeug.utils import secure_filename
-from app import getImages
 
 
 ###
@@ -65,7 +64,7 @@ def files():
     print photolist
     return render_template('files.html', photos = photolist)
 
-
+@app.route('/login', methods=['POST', 'GET'])
 def login():
     error = None
     if request.method == 'POST':
