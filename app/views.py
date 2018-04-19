@@ -4,13 +4,12 @@ Jinja2 Documentation:    http://jinja.pocoo.org/2/documentation/
 Werkzeug Documentation:  http://werkzeug.pocoo.org/documentation/
 This file creates your application.
 """
+
 import os
+from forms import UploadForm
 from app import app
-from flask_wtf import FlaskForm
 from flask import render_template, request, redirect, url_for, flash, session, abort
 from werkzeug.utils import secure_filename
-from flask_wtf.file import FileField, FileAllowed, FileRequired
-from app import forms
 from app import getImages
 
 
@@ -35,27 +34,38 @@ def upload():
         abort(401)
 
     # Instantiate your form class
-    class UploadForm(FlaskForm):
-        photo = FileField(validators=[FileRequired()])
+    photoform = UploadForm()
     # Validate file upload on submit
-    if FlaskForm.validate_on_submit():
-        f=FlaskForm.photo.data
-        filename = secure_filename(f.filename)
     if request.method == 'POST':
         # Get file data and save to your uploads folder
-        f.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-        
-       
-        flash('File Saved', 'success')
-        return redirect(url_for('home'))
-
-    return render_template('upload.html')
-
-@app.route('/files', methods=['POST','GET'])
+        if photoform.validate_on_submit():
+            photo = photoform.photo.data
+            
+            filename = secure_filename(photo.filename)
+            photo.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+            
+            flash('File Saved', 'successfully')
+            return redirect(url_for('home'))
+    flash_errors(photoform)
+    return render_template('upload.html', form=photoform)
+def get_uploaded_images():
+    photo = []
+    for subdir, dirs, files in os.walk(app.config['UPLOAD_FOLDER']):
+        for file in files:
+            photo.append(file)
+    photo.sort()
+    del photo[0]
+    return photo
+            
+@app.route('/files')
 def files():
-    getImg = get_uploaded_images()
-    return render_template('files.html',images = getImg )
-@app.route('/login', methods=['POST', 'GET'])
+    if not session.get('logged_in'):
+        abort(401)
+    photolist = get_uploaded_images()
+    print photolist
+    return render_template('files.html', photos = photolist)
+
+
 def login():
     error = None
     if request.method == 'POST':
